@@ -1,0 +1,47 @@
+name: tap_game
+description: A simple tap game built with Flutter.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_native_splash: ^2.4.7
+  audioplayers: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/images/splash_img.png
+  android: true
+  ios: true
+  web: true
+  android_12:
+    image: assets/images/splash_img.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path_android: assets/images/android_logo.png
+  image_path_ios: assets/images/ios_logo.png
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: assets/images/android_logo.png
+  web:
+    generate: true
+    image_path: assets/images/web_logo.png
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/audio/
