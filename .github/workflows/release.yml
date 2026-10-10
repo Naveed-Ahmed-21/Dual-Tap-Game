@@ -58,7 +58,7 @@ jobs:
             storePassword=$ANDROID_STORE_PASSWORD
             keyPassword=$ANDROID_KEY_PASSWORD
             keyAlias=$ANDROID_KEY_ALIAS
-            storeFile=upload-keystore.jks
+            storeFile=../upload-keystore.jks
             EOF
           else
             echo "Android signing secrets not set; building unsigned release artifact."
