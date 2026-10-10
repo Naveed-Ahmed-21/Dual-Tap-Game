@@ -1,59 +1,117 @@
-import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/material.dart';
 
-void main(){
-  runApp(MaterialApp(
-    home: MainPage(),
-    debugShowCheckedModeBanner: false,
-  ));
+const tapSoundAsset = 'audio/notification-alert-sound.mp3';
+const victorySoundAsset = 'audio/victory.mp3';
+
+void main() {
+  runApp(const TapGameApp());
 }
 
-class MainPage extends StatelessWidget{
-  const MainPage({super.key});
+class TapGameApp extends StatelessWidget {
+  const TapGameApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-     body: Column(
-       children: [
-         Container(
-           color: Colors.blueAccent,
-           height: MediaQuery.of(context).size.height/2,
-           width: double.infinity,
-           child: Center(
-             child: MaterialButton(onPressed: (){
-               Navigator.push(context, MaterialPageRoute(builder: (context)=>GamePage()));
-             },
-               color: Colors.white,
-               shape: CircleBorder(),
-               height: 150,
-               minWidth: 150,
-               child: Text('Start'),
-             ),
-           )
-         ),
-         Container(
-           color: Colors.redAccent,
-           height: MediaQuery.of(context).size.height/2,
-           width: double.infinity,
-           child: Center(
-             child: MaterialButton(onPressed: (){
-               Navigator.push(context, MaterialPageRoute(builder: (context)=>GamePage()));
-             },
-               color: Colors.white,
-               shape: CircleBorder(),
-               height: 150,
-               minWidth: 150,
-               child: Text('Start'),
-               ),
-             ),
-           )
-       ],
-     ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xfff5b84b),
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xff101317),
+        useMaterial3: true,
+      ),
+      home: const MainPage(),
     );
   }
 }
 
-class GamePage extends StatefulWidget{
+class MainPage extends StatelessWidget {
+  const MainPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Spacer(),
+              const Text(
+                'DUAL TAP',
+                style: TextStyle(
+                  color: Color(0xfff5b84b),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Tap your way\nto the top.',
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w800,
+                  height: 0.98,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Two players. One finish line.\nThe faster side wins.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.62),
+                  fontSize: 17,
+                  height: 1.4,
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const GamePage()),
+                  ),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Start game'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xfff5b84b),
+                    foregroundColor: const Color(0xff19140b),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    textStyle: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Center(
+                child: Text(
+                  'PLAYER B  •  TOP     PLAYER A  •  BOTTOM',
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class GamePage extends StatefulWidget {
   const GamePage({super.key});
 
   @override
@@ -61,39 +119,52 @@ class GamePage extends StatefulWidget{
 }
 
 class _GamePageState extends State<GamePage> {
-  double bluesize = 0;
-  double redsize = 0;
-  bool init = false;
-  int scoreplayerA = 0;
-  int scoreplayerB = 0;
-  late AudioPlayer tapPlayer;
-  late AudioPlayer victoryPlayer;
+  double blueProgress = 0.5;
+  int scorePlayerA = 0;
+  int scorePlayerB = 0;
+  bool roundOver = false;
+  final AudioPlayer tapPlayer = AudioPlayer();
+  final AudioPlayer victoryPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
-    tapPlayer = AudioPlayer();
-    victoryPlayer = AudioPlayer();
-    _setupAudio();
+    tapPlayer.setReleaseMode(ReleaseMode.stop);
+    tapPlayer.setVolume(0.8);
+    victoryPlayer.setReleaseMode(ReleaseMode.stop);
+    victoryPlayer.setVolume(1);
   }
 
-  Future<void> _setupAudio() async {
-    try {
-      // Configure tap player for rapid-fire sounds
-      await tapPlayer.setReleaseMode(ReleaseMode.stop);
-      await tapPlayer.setVolume(0.8);
-      
-      // Configure victory player
-      await victoryPlayer.setReleaseMode(ReleaseMode.stop);
-      await victoryPlayer.setVolume(1.0);
-      
-      // Warm up audio system by preloading
-      await tapPlayer.play(AssetSource('audio/tap.mp3'));
-      await Future.delayed(Duration(milliseconds: 100));
-      await tapPlayer.stop();
-    } catch (e) {
-      // Silently fail if audio files don't exist
-      print('Audio setup failed: $e');
+  void _tap(bool isPlayerA) {
+    if (roundOver) return;
+
+    tapPlayer.play(AssetSource(tapSoundAsset));
+    setState(() {
+      if (isPlayerA) {
+        blueProgress = (blueProgress - 0.04).clamp(0.08, 0.92);
+        scorePlayerA += 5;
+      } else {
+        blueProgress = (blueProgress + 0.04).clamp(0.08, 0.92);
+        scorePlayerB += 5;
+      }
+    });
+
+    final playerAWon = blueProgress <= 0.08;
+    final playerBWon = blueProgress >= 0.92;
+    if (playerAWon || playerBWon) {
+      roundOver = true;
+      final winner = playerAWon ? 'Player A' : 'Player B';
+      final score = playerAWon ? scorePlayerA : scorePlayerB;
+      victoryPlayer.play(AssetSource(victorySoundAsset));
+      Future<void>.delayed(const Duration(milliseconds: 260), () {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ResultPage(score: score, player: winner),
+          ),
+        );
+      });
     }
   }
 
@@ -104,138 +175,144 @@ class _GamePageState extends State<GamePage> {
     super.dispose();
   }
 
-
-  @override
-  Widget build(BuildContext context) {
-    if (init == false) {
-      bluesize = MediaQuery.of(context).size.height / 2;
-      redsize = MediaQuery.of(context).size.height / 2;
-      init = true;
-    }
-    return Scaffold(
-      body: Column(
-        children: [
-          MaterialButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              // Play tap sound immediately without await
-              tapPlayer.play(AssetSource('audio/tap.mp3')).catchError((_) {});
-              
-              setState(() {
-                bluesize = bluesize + 30;
-                redsize = redsize - 30;
-              });
-              scoreplayerB = scoreplayerB + 5;
-
-              double winsize=MediaQuery.of(context).size.height-80;
-              if(bluesize>winsize){
-                print("Player B wins");
-                victoryPlayer.play(AssetSource('audio/victory.mp3')).catchError((_) {});
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>ResultPage(scoreplayerB,"Player B Wins")));
-              }
-            },
-            child: Container(
-              color: Colors.blueAccent,
-              height: bluesize,
-              width: double.infinity,
-              alignment: Alignment.topLeft,
-              padding: EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(child:
-                  Text('Player B',
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)
-                  )
-                  ),
-                  Text(scoreplayerB.toString(),
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-
-            ),
-          ),
-          MaterialButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              // Play tap sound immediately without await
-              tapPlayer.play(AssetSource('audio/tap.mp3')).catchError((_) {});
-              
-              setState(() {
-                redsize = redsize + 30;
-                bluesize = bluesize - 30;
-              });
-              scoreplayerA = scoreplayerA + 5;
-
-              double winsize=MediaQuery.of(context).size.height-80;
-              print(redsize);
-              print(winsize);
-
-              if(redsize>winsize){
-                print("Player A Wins");
-                victoryPlayer.play(AssetSource('audio/victory.mp3')).catchError((_) {});
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>ResultPage(scoreplayerA,"Player A Wins")));
-              }
-            },
-            child: Container(
-              color: Colors.redAccent,
-              height: redsize,
-              width: double.infinity,
-              alignment: Alignment.bottomLeft,
-              padding: EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(child:
-                  Text('Player A',
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)
-                  )
-                  ),
-                  Text(scoreplayerA.toString(),
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)
-                  ),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-}
-
-
-
-class ResultPage extends StatelessWidget{
-  int score=0;
-  String player="";
-  ResultPage(this.score,this.player, {super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: player=="Player A Wins"?Colors.redAccent:Colors.blueAccent,
-      body: Center(
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-
           children: [
-            Text(player,
-              style: TextStyle(fontSize: 50,fontWeight: FontWeight.bold),
+            Expanded(
+              flex: (blueProgress * 100).round(),
+              child: _PlayerPanel(
+                label: 'PLAYER B',
+                score: scorePlayerB,
+                color: const Color(0xff3c7eff),
+                alignment: Alignment.topLeft,
+                onTap: () => _tap(false),
+              ),
             ),
-            Text(score.toString()),
-            MaterialButton(onPressed: (){
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-              color: Colors.white,
-              child: Text('Restart'),
-            )
-          ]
+            Container(height: 1, color: Colors.white24),
+            Expanded(
+              flex: ((1 - blueProgress) * 100).round(),
+              child: _PlayerPanel(
+                label: 'PLAYER A',
+                score: scorePlayerA,
+                color: const Color(0xffef625d),
+                alignment: Alignment.bottomLeft,
+                onTap: () => _tap(true),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+class _PlayerPanel extends StatelessWidget {
+  const _PlayerPanel({
+    required this.label,
+    required this.score,
+    required this.color,
+    required this.alignment,
+    required this.onTap,
+  });
+
+  final String label;
+  final int score;
+  final Color color;
+  final Alignment alignment;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Align(
+            alignment: alignment,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+                Text(
+                  '$score',
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ResultPage extends StatelessWidget {
+  const ResultPage({required this.score, required this.player, super.key});
+
+  final int score;
+  final String player;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: player == 'Player A'
+          ? const Color(0xffef625d)
+          : const Color(0xff3c7eff),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'WINNER',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              player,
+              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text('$score points', style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const GamePage()),
+              ),
+              icon: const Icon(Icons.replay_rounded),
+              label: const Text('Play again'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 15,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
