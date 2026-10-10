@@ -49,14 +49,20 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         shell: bash
         run: |
-          test -n "$ANDROID_KEYSTORE_BASE64" || { echo 'ANDROID_KEYSTORE_BASE64 is required'; exit 1; }
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
-          cat > android/key.properties <<EOF
-          storePassword=$ANDROID_STORE_PASSWORD
-          keyPassword=$ANDROID_KEY_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          storeFile=../upload-keystore.jks
-          EOF
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            test -n "$ANDROID_KEY_ALIAS" || { echo 'ANDROID_KEY_ALIAS is required when signing is enabled'; exit 1; }
+            test -n "$ANDROID_KEY_PASSWORD" || { echo 'ANDROID_KEY_PASSWORD is required when signing is enabled'; exit 1; }
+            test -n "$ANDROID_STORE_PASSWORD" || { echo 'ANDROID_STORE_PASSWORD is required when signing is enabled'; exit 1; }
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+            cat > android/key.properties <<EOF
+            storePassword=$ANDROID_STORE_PASSWORD
+            keyPassword=$ANDROID_KEY_PASSWORD
+            keyAlias=$ANDROID_KEY_ALIAS
+            storeFile=../upload-keystore.jks
+            EOF
+          else
+            echo "Android signing secrets not set; building unsigned release artifact."
+          fi
 
       - run: flutter pub get
       - run: flutter build appbundle --release
