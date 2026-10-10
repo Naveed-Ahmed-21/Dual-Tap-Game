@@ -1,4 +1,4 @@
-# Tap Game
+# Dual Tap
 
 A fun and competitive Flutter-based tap game where two players battle to conquer the screen by tapping their respective colored areas. The player who fills the entire screen first wins!
 
@@ -18,7 +18,7 @@ A fun and competitive Flutter-based tap game where two players battle to conquer
 
 1. The screen is divided into two halves: top (Blue - Player B) and bottom (Red - Player A)
 2. Players tap their respective areas to expand their territory
-3. Each tap increases your area by 30 pixels and decreases your opponent's by 30 pixels
+3. Each tap moves the territory divider by 4% and awards 5 points
 4. The first player to fill the entire screen wins
 5. Scores are tracked and displayed during gameplay
 
@@ -29,7 +29,8 @@ A fun and competitive Flutter-based tap game where two players battle to conquer
 ## Requirements
 
 ### System Requirements
-- Flutter SDK: >=3.0.0 <4.0.0
+
+- Flutter SDK: 3.47.0 stable
 - Dart SDK: Included with Flutter
 
 ### Development Environment
@@ -37,6 +38,22 @@ A fun and competitive Flutter-based tap game where two players battle to conquer
 - For Android development: Android SDK (API level 21 or higher)
 - For iOS development: macOS with Xcode
 - For Web development: Chrome browser
+
+### App Identity and Versioning
+
+- Android application ID: `com.naveed.dualtap`
+- iOS bundle identifier: `com.naveed.dualtap`
+- Version source: `pubspec.yaml`, currently `1.0.0+1`
+- The build name is the semantic version (`1.0.0`); the build number is the incrementing release number (`1`)
+
+Update the `version:` value before each release. Create a matching tag, for example:
+
+```bash
+git tag v1.0.0+1
+git push origin v1.0.0+1
+```
+
+The tag starts the GitHub Actions release workflow. It produces an Android App Bundle and an iOS app artifact. Store publishing still requires your Google Play and Apple Developer credentials configured as repository secrets.
 
 ### Dependencies
 - `flutter`: The Flutter framework
@@ -61,7 +78,7 @@ A fun and competitive Flutter-based tap game where two players battle to conquer
 
 3. **Add sound files** (optional):
    Place the following audio files in `assets/audio/`:
-   - `tap.mp3`: Sound effect for button taps
+   - `notification-alert-sound.mp3`: Sound effect for button taps
    - `victory.mp3`: Sound effect for victory
 
    **Note**: Placeholder files are created. Replace them with actual MP3 sound files for audio feedback. If audio files are not present or invalid, the game will work silently.
@@ -98,6 +115,21 @@ flutter run -d macos
 ```bash
 flutter run --debug
 ```
+
+### Android Release Signing
+
+Never commit a keystore or `android/key.properties`. For a local signed release, create `android/key.properties` with the values expected by `android/app/build.gradle.kts`. The GitHub Actions workflow reads the equivalent values from these secrets:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+- `ANDROID_STORE_PASSWORD`
+
+Without signing credentials, local debug builds and tests remain available, but the Android artifact is not ready for Play Store submission.
+
+### Production CI/CD
+
+The release workflow is defined in `.github/workflows/release.yml`. It pins Flutter 3.47.0, validates a release tag against `pubspec.yaml`, builds a signed Android App Bundle, and builds an unsigned iOS release artifact on macOS. App Store and Play Store publishing requires configuring the respective store credentials and signing certificates in GitHub Actions secrets.
 
 ### Release Build
 ```bash
