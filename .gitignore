@@ -50,3 +50,6 @@ app.*.map.json
 *.jks
 *.keystore
 *.base64
+
+/upload-keystore.jks
+/android/key.properties

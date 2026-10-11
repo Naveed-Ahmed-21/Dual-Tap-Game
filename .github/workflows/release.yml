@@ -41,6 +41,7 @@ jobs:
             exit 1
           }
 
+      
       - name: Configure release signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -49,24 +50,33 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         shell: bash
         run: |
+          set -euo pipefail
+
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
-            test -n "$ANDROID_KEY_ALIAS" || { echo 'ANDROID_KEY_ALIAS is required when signing is enabled'; exit 1; }
-            test -n "$ANDROID_KEY_PASSWORD" || { echo 'ANDROID_KEY_PASSWORD is required when signing is enabled'; exit 1; }
-            test -n "$ANDROID_STORE_PASSWORD" || { echo 'ANDROID_STORE_PASSWORD is required when signing is enabled'; exit 1; }
+            test -n "$ANDROID_KEY_ALIAS"
+            test -n "$ANDROID_KEY_PASSWORD"
+            test -n "$ANDROID_STORE_PASSWORD"
+
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
-            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=../upload-keystore.jks\n' \
-              "$ANDROID_STORE_PASSWORD" \
-              "$ANDROID_KEY_PASSWORD" \
-              "$ANDROID_KEY_ALIAS" \
-            printf '%s\n' \
-              "storePassword=$ANDROID_STORE_PASSWORD" \
-              "keyPassword=$ANDROID_KEY_PASSWORD" \
-              "keyAlias=$ANDROID_KEY_ALIAS" \
-              "storeFile=../upload-keystore.jks" \
-              > android/key.properties
+
+            cat > android/key.properties <<EOF
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+            keytool -list \
+              -keystore android/upload-keystore.jks \
+              -storepass "$ANDROID_STORE_PASSWORD" \
+              -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
+            echo "Android release signing configured."
           else
-            echo "Android signing secrets not set; building unsigned release artifact."
+            echo "Android signing secrets not set."
+            exit 1
           fi
+
 
       - run: flutter pub get
       - run: flutter build appbundle --release
