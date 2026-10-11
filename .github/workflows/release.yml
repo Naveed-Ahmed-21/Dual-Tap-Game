@@ -58,6 +58,11 @@ jobs:
               "$ANDROID_STORE_PASSWORD" \
               "$ANDROID_KEY_PASSWORD" \
               "$ANDROID_KEY_ALIAS" \
+            printf '%s\n' \
+              "storePassword=$ANDROID_STORE_PASSWORD" \
+              "keyPassword=$ANDROID_KEY_PASSWORD" \
+              "keyAlias=$ANDROID_KEY_ALIAS" \
+              "storeFile=../upload-keystore.jks" \
               > android/key.properties
           else
             echo "Android signing secrets not set; building unsigned release artifact."
