@@ -54,12 +54,11 @@ jobs:
             test -n "$ANDROID_KEY_PASSWORD" || { echo 'ANDROID_KEY_PASSWORD is required when signing is enabled'; exit 1; }
             test -n "$ANDROID_STORE_PASSWORD" || { echo 'ANDROID_STORE_PASSWORD is required when signing is enabled'; exit 1; }
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
-            cat > android/key.properties <<EOF
-            storePassword=$ANDROID_STORE_PASSWORD
-            keyPassword=$ANDROID_KEY_PASSWORD
-            keyAlias=$ANDROID_KEY_ALIAS
-            storeFile=../upload-keystore.jks
-            EOF
+            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=../upload-keystore.jks\n' \
+              "$ANDROID_STORE_PASSWORD" \
+              "$ANDROID_KEY_PASSWORD" \
+              "$ANDROID_KEY_ALIAS" \
+              > android/key.properties
           else
             echo "Android signing secrets not set; building unsigned release artifact."
           fi
